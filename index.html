@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dragon Ball Tetris</title>
+    <style>
+      :root {
+        --rows: 20;
+        --cols: 10;
+        --block: 30px;
+        --bg: #1a0f2e;
+        --panel-bg: #2d1b4e;
+        --panel-text: #ffd700;
+        --grid: #4a2d7a;
+        --orange: #ff6b35;
+        --blue: #4ecdc4;
+        --yellow: #ffd700;
+        --red: #ff4757;
+        --purple: #a55eea;
+        --green: #2ed573;
+        --cyan: #00d2d3;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: 
+          radial-gradient(ellipse at top, #ff6b35 0%, transparent 50%),
+          radial-gradient(ellipse at bottom, #4ecdc4 0%, transparent 50%),
+          linear-gradient(135deg, #1a0f2e 0%, #2d1b4e 50%, #1a0f2e 100%);
+        color: var(--panel-text);
+        font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
+        position: relative;
+        overflow: hidden;
+      }
+
+      body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+          radial-gradient(circle at 20% 80%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(78, 205, 196, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: auto 250px;
+        gap: 25px;
+        align-items: start;
+        position: relative;
+        z-index: 1;
+      }
+
+      .panel {
+        background: linear-gradient(145deg, var(--panel-bg), #1f1340);
+        border: 2px solid var(--orange);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 
+          0 15px 35px rgba(0,0,0,.4),
+          inset 0 1px 0 rgba(255,255,255,.1);
+        position: relative;
+      }
+
+      .panel::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, var(--orange), var(--blue), var(--yellow));
+        border-radius: 15px;
+        z-index: -1;
+        opacity: 0.3;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin: 0 0 15px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-align: center;
+        text-shadow: 2px 2px 4px rgba(0,0,0,.5);
+        background: linear-gradient(45deg, var(--orange), var(--yellow));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .stats { 
+        display: grid; 
+        gap: 12px; 
+        font-size: 16px; 
+        margin-bottom: 20px;
+      }
+      
+      .row { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        padding: 8px 12px;
+        background: rgba(255,255,255,.05);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,.1);
+      }
+      
+      .row strong {
+        color: var(--yellow);
+        text-shadow: 0 0 10px var(--yellow);
+        font-size: 18px;
+      }
+      
+      .hint { 
+        margin-top: 15px; 
+        font-size: 13px; 
+        opacity: 0.9; 
+        line-height: 1.6;
+        text-align: center;
+        padding: 10px;
+        background: rgba(255,255,255,.05);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,.1);
+      }
+      
+      .btns { 
+        display: grid; 
+        gap: 10px; 
+        margin-top: 15px; 
+      }
+      
+      button {
+        appearance: none;
+        border: 2px solid var(--orange);
+        background: linear-gradient(145deg, #2d1b4e, #1f1340);
+        color: var(--panel-text);
+        padding: 12px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 8px rgba(0,0,0,.3);
+      }
+      
+      button:hover {
+        background: linear-gradient(145deg, var(--orange), #ff8c42);
+        color: #000;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(255, 107, 53, 0.4);
+      }
+      
+      button:active { 
+        transform: translateY(0px); 
+      }
+
+      .creator {
+        text-align: center;
+        margin: 20px 0;
+        padding: 15px;
+        background: rgba(255,255,255,.05);
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.1);
+      }
+
+      .creator h3 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        color: var(--yellow);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .creator img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 3px solid var(--orange);
+        box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        object-fit: cover;
+        margin-bottom: 8px;
+        animation: creatorGlow 3s ease-in-out infinite;
+        transition: all 0.3s ease;
+      }
+
+      .creator img:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 30px rgba(255, 107, 53, 0.8);
+      }
+
+      .creator img.winking {
+        animation: wink 0.5s ease-in-out;
+      }
+
+      .creator img.smiling {
+        animation: smile 2s ease-in-out;
+      }
+
+      @keyframes creatorGlow {
+        0%, 100% { 
+          box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+          transform: scale(1);
+        }
+        50% { 
+          box-shadow: 0 0 30px rgba(255, 107, 53, 0.8), 0 0 40px rgba(255, 215, 0, 0.3);
+          transform: scale(1.05);
+        }
+      }
+
+      @keyframes wink {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        25% { transform: scale(0.9) rotate(-2deg); }
+        50% { transform: scale(0.8) rotate(-5deg); }
+        75% { transform: scale(0.9) rotate(-2deg); }
+      }
+
+      @keyframes smile {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        25% { transform: scale(1.1) rotate(2deg); }
+        50% { transform: scale(1.15) rotate(5deg); }
+        75% { transform: scale(1.1) rotate(2deg); }
+      }
+
+      .creator p {
+        margin: 0;
+        font-size: 12px;
+        opacity: 0.9;
+        font-weight: bold;
+      }
+
+      canvas {
+        width: calc(var(--cols) * var(--block));
+        height: calc(var(--rows) * var(--block));
+        image-rendering: pixelated;
+        background:
+          linear-gradient(#0000, #0000) padding-box,
+          repeating-linear-gradient(
+            to right,
+            var(--grid) 0 1px,
+            #0000 1px calc(var(--block))
+          ),
+          repeating-linear-gradient(
+            to bottom,
+            var(--grid) 0 1px,
+            #0000 1px calc(var(--block))
+          );
+        border-radius: 15px;
+        border: 3px solid var(--orange);
+        box-shadow: 
+          0 25px 60px rgba(0,0,0,.5),
+          0 0 30px rgba(255, 107, 53, 0.3);
+        position: relative;
+      }
+
+      canvas::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        background: linear-gradient(45deg, var(--orange), var(--blue), var(--yellow));
+        border-radius: 15px;
+        z-index: -1;
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <canvas id="tetris" width="300" height="600" aria-label="Tetris board" role="img"></canvas>
+
+      <aside class="panel" aria-live="polite">
+        <h1>Dragon Ball Tetris</h1>
+        <div class="creator" aria-label="Creator">
+          <img src="creator.jpg" alt="Creator photo" />
+          <h3>Created by</h3>
+          <p>Creator</p>
+        </div>
+        <div class="stats">
+          <div class="row"><span>Power Level</span><strong id="score">0</strong></div>
+          <div class="row"><span>Lines Cleared</span><strong id="lines">0</strong></div>
+          <div class="row"><span>Transformation</span><strong id="level">1</strong></div>
+        </div>
+        <div class="btns">
+          <button id="restart" title="Restart (R)">Fight Again</button>
+          <button id="pause" title="Pause/Resume (P)">Pause Battle</button>
+        </div>
+        <div class="hint">
+          Controls: ← → move, ↑ rotate, ↓ soft drop, Space hard drop, P pause, R restart
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      // Dimensions
+      const ROWS = 20;
+      const COLS = 10;
+      const BLOCK = 30; // px
+
+      // Canvas setup (explicit width/height to match logical grid)
+      const canvas = document.getElementById('tetris');
+      const ctx = canvas.getContext('2d');
+      canvas.width = COLS * BLOCK;
+      canvas.height = ROWS * BLOCK;
+
+      // UI
+      const scoreEl = document.getElementById('score');
+      const linesEl = document.getElementById('lines');
+      const levelEl = document.getElementById('level');
+      const pauseBtn = document.getElementById('pause');
+      const restartBtn = document.getElementById('restart');
+
+      // Dragon Ball Z themed colors by piece index
+      const COLORS = ['#ff6b35', '#4ecdc4', '#ffd700', '#ff4757', '#a55eea', '#2ed573', '#00d2d3'];
+
+      // Tetromino definitions (1 = block, 0 = empty)
+      const TETROMINOES = [
+        // I
+        [[1,1,1,1]],
+        // O
+        [[1,1],[1,1]],
+        // T
+        [[0,1,0],[1,1,1]],
+        // S
+        [[0,1,1],[1,1,0]],
+        // Z
+        [[1,1,0],[0,1,1]],
+        // L
+        [[0,0,1],[1,1,1]],
+        // J
+        [[1,0,0],[1,1,1]],
+      ];
+
+      function cloneMatrix(matrix) { return matrix.map(row => row.slice()); }
+
+      function createBoard() {
+        return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+      }
+
+      function drawCell(x, y, color) {
+        // Create gradient for each cell
+        const gradient = ctx.createLinearGradient(
+          x * BLOCK, y * BLOCK, 
+          (x + 1) * BLOCK, (y + 1) * BLOCK
+        );
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, adjustBrightness(color, -30));
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x * BLOCK, y * BLOCK, BLOCK, BLOCK);
+        
+        // Add highlight
+        ctx.fillStyle = adjustBrightness(color, 30);
+        ctx.fillRect(x * BLOCK + 2, y * BLOCK + 2, BLOCK - 4, 2);
+        ctx.fillRect(x * BLOCK + 2, y * BLOCK + 2, 2, BLOCK - 4);
+        
+        // Add border
+        ctx.strokeStyle = adjustBrightness(color, -50);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x * BLOCK + 0.5, y * BLOCK + 0.5, BLOCK - 1, BLOCK - 1);
+      }
+
+      function adjustBrightness(color, amount) {
+        const hex = color.replace('#', '');
+        const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+        const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+        const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+      }
+
+      function drawBoard() {
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const color = board[r][c];
+            if (color) drawCell(c, r, color);
+          }
+        }
+      }
+
+      function forEachBlock(shape, pos, callback) {
+        for (let r = 0; r < shape.length; r++) {
+          for (let c = 0; c < shape[r].length; c++) {
+            if (shape[r][c]) callback(pos.x + c, pos.y + r);
+          }
+        }
+      }
+
+      function collides(shape, pos) {
+        for (let r = 0; r < shape.length; r++) {
+          for (let c = 0; c < shape[r].length; c++) {
+            if (!shape[r][c]) continue;
+            const x = pos.x + c;
+            const y = pos.y + r;
+            if (x < 0 || x >= COLS || y >= ROWS) return true;
+            if (y >= 0 && board[y][x]) return true; // ignore above top
+          }
+        }
+        return false;
+      }
+
+      function rotateMatrix(matrix) {
+        const h = matrix.length, w = matrix[0].length;
+        const rotated = Array.from({ length: w }, (_, c) => Array(h).fill(0));
+        for (let r = 0; r < h; r++) {
+          for (let c = 0; c < w; c++) {
+            rotated[c][h - 1 - r] = matrix[r][c];
+          }
+        }
+        return rotated;
+      }
+
+      function spawnPiece() {
+        const idx = Math.floor(Math.random() * TETROMINOES.length);
+        const shape = cloneMatrix(TETROMINOES[idx]);
+        const color = COLORS[idx];
+        const pos = { x: Math.floor((COLS - shape[0].length) / 2), y: -1 };
+        return { shape, color, pos };
+      }
+
+      function lockPiece() {
+        forEachBlock(current.shape, current.pos, (x, y) => {
+          if (y >= 0) board[y][x] = current.color;
+        });
+      }
+
+      function clearLines() {
+        let cleared = 0;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (board[r].every(cell => cell)) {
+            board.splice(r, 1);
+            board.unshift(Array(COLS).fill(null));
+            cleared++;
+            r++; // re-check same row index after unshift
+          }
+        }
+        if (cleared) updateScore(cleared);
+      }
+
+      function updateScore(linesCleared) {
+        const linePoints = [0, 100, 300, 500, 800];
+        score += linePoints[Math.min(linesCleared, 4)] * level;
+        lines += linesCleared;
+        level = 1 + Math.floor(lines / 10);
+        dropInterval = Math.max(120, 700 - (level - 1) * 60);
+        scoreEl.textContent = String(score);
+        linesEl.textContent = String(lines);
+        levelEl.textContent = String(level);
+        
+        // Add visual feedback for line clears
+        if (linesCleared > 0) {
+          canvas.style.boxShadow = `0 25px 60px rgba(0,0,0,.5), 0 0 50px ${COLORS[Math.floor(Math.random() * COLORS.length)]}`;
+          setTimeout(() => {
+            canvas.style.boxShadow = '0 25px 60px rgba(0,0,0,.5), 0 0 30px rgba(255, 107, 53, 0.3)';
+          }, 300);
+        }
+      }
+
+      function drawCurrent() {
+        forEachBlock(current.shape, current.pos, (x, y) => {
+          if (y >= 0) drawCell(x, y, current.color);
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBoard();
+        drawCurrent();
+      }
+
+      function softDrop() {
+        const nextPos = { x: current.pos.x, y: current.pos.y + 1 };
+        if (!collides(current.shape, nextPos)) {
+          current.pos = nextPos;
+          return true;
+        }
+        // Land
+        lockPiece();
+        clearLines();
+        current = spawnPiece();
+        if (collides(current.shape, current.pos)) {
+          // Game over
+          running = false;
+          paused = true;
+          pauseBtn.textContent = 'Resume';
+          alert('Game Over! Your power level was: ' + score);
+          reset(true);
+        }
+        return false;
+      }
+
+      function hardDrop() {
+        let moved = 0;
+        while (softDrop()) moved++;
+      }
+
+      function move(dx) {
+        const nextPos = { x: current.pos.x + dx, y: current.pos.y };
+        if (!collides(current.shape, nextPos)) current.pos = nextPos;
+      }
+
+      function rotate() {
+        const rotated = rotateMatrix(current.shape);
+        const original = current.shape;
+        const kicks = [0, -1, 1, -2, 2];
+        for (const k of kicks) {
+          const testPos = { x: current.pos.x + k, y: current.pos.y };
+          if (!collides(rotated, testPos)) {
+            current.shape = rotated;
+            current.pos = testPos;
+            return;
+          }
+        }
+        // Revert if all kicks collide
+        current.shape = original;
+      }
+
+      // Game loop
+      let board = createBoard();
+      let current = spawnPiece();
+      let lastTime = 0;
+      let dropCounter = 0;
+      let dropInterval = 700; // ms, speeds up with levels
+      let running = true;
+      let paused = false;
+      let score = 0;
+      let lines = 0;
+      let level = 1;
+
+      function update(time = 0) {
+        if (!running) return;
+        const delta = time - lastTime;
+        lastTime = time;
+        if (!paused) {
+          dropCounter += delta;
+          if (dropCounter > dropInterval) {
+            softDrop();
+            dropCounter = 0;
+          }
+          draw();
+        }
+        requestAnimationFrame(update);
+      }
+
+      function reset(keepScore = false) {
+        board = createBoard();
+        current = spawnPiece();
+        lastTime = 0;
+        dropCounter = 0;
+        running = true;
+        paused = false;
+        pauseBtn.textContent = 'Pause';
+        if (!keepScore) {
+          score = 0; lines = 0; level = 1; dropInterval = 700;
+          scoreEl.textContent = '0';
+          linesEl.textContent = '0';
+          levelEl.textContent = '1';
+        }
+      }
+
+      // Controls
+      document.addEventListener('keydown', (e) => {
+        if (e.repeat) return;
+        switch (e.key) {
+          case 'ArrowLeft': move(-1); break;
+          case 'ArrowRight': move(1); break;
+          case 'ArrowDown': softDrop(); break;
+          case 'ArrowUp': rotate(); break;
+          case ' ': e.preventDefault(); hardDrop(); break;
+          case 'p': case 'P':
+            paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+            break;
+          case 'r': case 'R': reset(); break;
+        }
+        draw();
+      });
+
+      pauseBtn.addEventListener('click', () => {
+        paused = !paused;
+        pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+      });
+
+      restartBtn.addEventListener('click', () => reset());
+
+      // Creator image animations
+      const creatorImg = document.querySelector('.creator img');
+      
+      function animateCreator() {
+        // Wink animation
+        setTimeout(() => {
+          creatorImg.classList.add('winking');
+          setTimeout(() => creatorImg.classList.remove('winking'), 500);
+        }, 1000);
+        
+        // Smile animation
+        setTimeout(() => {
+          creatorImg.classList.add('smiling');
+          setTimeout(() => creatorImg.classList.remove('smiling'), 2000);
+        }, 2000);
+        
+        // Random wink every 10-15 seconds
+        setInterval(() => {
+          if (Math.random() < 0.3) { // 30% chance
+            creatorImg.classList.add('winking');
+            setTimeout(() => creatorImg.classList.remove('winking'), 500);
+          }
+        }, 10000);
+      }
+
+      // Start
+      requestAnimationFrame(update);
+      draw();
+      
+      // Start creator animations after a short delay
+      setTimeout(animateCreator, 500);
+    </script>
+  </body>
+  </html>
+
+
